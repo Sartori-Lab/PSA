@@ -51,3 +51,10 @@ If you are using this package as part of an academic project, please cite the fo
         eprint = {2022.XYZ},
         year = 2020}
 ```
+
+## ToDo
+
+- follow a simpler directory (fsa, examples)
+- fix business with tmp/data and all that
+- create setup file and all that
+- put on pypi
