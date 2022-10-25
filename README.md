@@ -54,7 +54,5 @@ If you are using this package as part of an academic project, please cite the fo
 
 ## ToDo
 
-- add one example
 - move cylinder and rod stuff to forms
 - add test example, for analytics
-- add the evolution conservation analysis
