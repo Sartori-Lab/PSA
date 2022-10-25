@@ -64,6 +64,8 @@ If you are using this package as part of an academic project, please cite the fo
 ## ToDo
 
 - add cylinder file notebook
+- add minimal working example
+- add complicated working example
 - the chunk that follows should be a function
 ``` python
 uni_ids = [None] * len(rel_pps)
@@ -76,3 +78,5 @@ com_res = seq.common(rel_dict, def_dict)
 ```
 - check that the second order works
 - implement numba
+- add to pypi
+- use black to polish code
