@@ -73,4 +73,6 @@ def_idx = seq.align(def_pps, my_ref_seqs)
 rel_dict = seq.aligned_dict(rel_pps, rel_idx)
 def_dict = seq.aligned_dict(def_pps, def_idx)
 com_res = seq.common(rel_dict, def_dict)
-``
+```
+- check that the second order works
+- implement numba
