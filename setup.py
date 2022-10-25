@@ -7,17 +7,17 @@ setup(
     license='MIT',
     author="Pablo Sartori",
     author_email='psartor@igc.gulbenkian.pt',
-    packages=find_packages('src'),
-    package_dir={'': 'src'},
+    packages=find_packages(),
+    #package_dir={'': 'src'},
     url='https://github.com/sartorilab/proFSA',
     keywords=["biomechanics", "protein-structure", "biophysics", "bioinformatics"],
     python_requires=">=3.8",
     install_requires=[
-        "matplotlib>=3.1.0",
-        "numpy>=1.22.0",
-        "scipy>=1.4.0",
+        "matplotlib",
+        "numpy",
+        "scipy",
         "biopython",
-        "urllib",
+        "urllib3",
     ],
 
 )

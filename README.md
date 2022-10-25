@@ -44,17 +44,17 @@ If you are using this package as part of an academic project, please cite the fo
 
 ```bash
 @article{XXXYYYZZZ,
-        author = {Sartori, Pablo and Leibler, Stanislas},
-        title = {},
-        journal = {ArXiv e-prints},
-        archivePrefix = \"arXiv\",
-        eprint = {2022.XYZ},
-        year = 2020}
+         author = {Sartori, Pablo and Leibler, Stanislas},
+         title = {},
+         journal = {ArXiv e-prints},
+         archivePrefix = \"arXiv\",
+         eprint = {2022.XYZ},
+         year = 2020}
 ```
 
 ## ToDo
 
-- follow a simpler directory (fsa, examples)
-- fix business with tmp/data and all that
-- create setup file and all that
-- put on pypi
+- add one example
+- move cylinder and rod stuff to forms
+- add test example, for analytics
+- add the evolution conservation analysis

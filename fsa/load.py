@@ -13,7 +13,7 @@ import numpy as np
 
 
 def single_structure(name, relabel=None, transform=None, model_id=0,
-                     chain_ids=None, file_type='pdb'):
+                     chain_ids=None, path='./', file_type='pdb'):
     """
     Load PDB file, read structure and generate list of
     polypeptide objects (several polypeptides consti-
@@ -27,8 +27,8 @@ def single_structure(name, relabel=None, transform=None, model_id=0,
     ppb = PDB.PPBuilder()
 
     # Download and load pdb/cif file
-    download_file(name, file_type)
-    filename = 'data/' + file_type + '/' + name + '.' + file_type
+    download_file(name, path, file_type)
+    filename = path + name + '.' + file_type
     structure = parser.get_structure(name, filename)
 
     # Load chains, maybe relabel
@@ -112,11 +112,11 @@ def transform_chains(chains, transform):
     return chains_new
 
 
-def download_file(name, file_type='pdb'):
+def download_file(name, path='./', file_type='pdb'):
     """
     Download pdb files if they are not present
     """
-    filename = 'data/' + file_type + '/' + name + '.' + file_type
+    filename = path + name + '.' + file_type
     if not os.path.exists(filename):
         targt_url = 'https://files.rcsb.org/download/' + name + '.' + file_type
         url = urlretrieve(targt_url, filename)
@@ -258,7 +258,7 @@ def test_residue(res, common_res=None, al_dict=None):
         return al_dict[res.full_id] in common_res
 
 
-def save_bfactor(name, bfact=None, ext='_rot_clust', file_type='pdb'):
+def save_bfactor(name, bfact=None, ext='_rot_clust', path = './', file_type='pdb'):
     """
     Use the labels->numbers bfact dictionary to modify the beta factors
     of a given structure and save it with an extension.
@@ -270,7 +270,7 @@ def save_bfactor(name, bfact=None, ext='_rot_clust', file_type='pdb'):
     elif file_type == 'cif':
         parser = PDB.MMCIFParser()
         writer = PDB.MMCIFIO()
-    filename = 'data/' + file_type + '/' + name + '.' + file_type
+    filename = path + name + '.' + file_type
     structure = parser.get_structure(name, filename)
 
     # Modify structure with new beta factors
