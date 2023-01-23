@@ -11,8 +11,8 @@ from Bio import SeqUtils
 from Bio.SeqUtils import seq1
 from urllib.request import urlopen
 import os
-import subprocess
 import re
+import glob
 import warnings
 import numpy as np
 
@@ -109,8 +109,9 @@ def align(pps, ref_seqs): # CHANGE TO align_pps
             start_stop[-1].append(alignments[0].aligned)
 
     # Remove temp files
-    subprocess.check_call(['rm', '-rf', 'tmp/alignment_*'])
-
+    for f in glob.glob("tmp/alignment_*"):
+        os.remove(f)
+        
     return start_stop
 
 
