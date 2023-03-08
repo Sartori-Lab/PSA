@@ -4,10 +4,10 @@ example, it calculates the deformation gradients.
 """
 
 import numpy as np
+from numba import jit
 from scipy.spatial import distance
 import scipy.linalg as spla
 import numpy.linalg as npla
-
 
 def bintersect_weights(xyz_list, method='linear', parameters=[6., 8.]):
     """
@@ -68,6 +68,43 @@ def linear_weights(xyz, parameters=[6., 8.]):
     return weights
 
 
+@jit(nopython = True)
+def linear_weights_fast(xyz_list, parameters = (6.,8.)):
+    """
+    Calculate the average weights for each coordinate set using a linear decay 
+    function (two radii are provided). The function returns the weights as a 
+    dictionary with the pairs of position indexes as keys and the weights as 
+    values. Absent pairs of coordinates have zero weight.
+    """
+    
+    r1, r2 = parameters[0], parameters[1]
+    
+    weights = dict()
+    
+    for xyz in xyz_list:        
+        for i in range(len(xyz)):
+            for j in range(i+1, len(xyz)):
+                # Calculates pairwise distance between atoms
+                distance = 0
+                for k in range(3):
+                    distance += np.power(xyz[i,k] - xyz[j,k], 2)
+                distance = np.sqrt(distance)
+    
+                # Keeps all pairs within radius 2
+                if(distance < r2):
+                    w = np.minimum(1 - (distance - r1) / (r2 - r1), 1.)
+                    w = w/len(xyz_list)                    
+                    
+                    if (i,j) not in weights:
+                        weights[(i,j)] = w
+                        weights[(j,i)] = w
+                    else:
+                        weights[(i,j)] += w
+                        weights[(j,i)] += w
+
+    return weights
+
+
 def minimal_weights(xyz, parameters=[3]):
     """
     Weight matrix is the minimal required to solve the equations of the defor-
@@ -89,6 +126,50 @@ def minimal_weights(xyz, parameters=[3]):
         weights[i][nn] = 1.
 
     return weights
+
+
+@jit(nopython=True)
+def intermediate_matrixes(weights, xyz_rel, xyz_def):
+    """
+    Calculate the matrixes D and A, intermediate steps in the calculation of F in 
+    [Gullet et al,] (Eq. X), or Eq. 17 in [Zimmerman et al, 2009].
+    """
+    num_res = xyz_rel.shape[0]
+    D = np.zeros((num_res, 3, 3))
+    A = np.zeros((num_res, 3, 3))
+    
+    dX = np.zeros((3,3), dtype = np.float64)
+    dx = np.zeros((3,3), dtype = np.float64)
+    
+    for pos in weights:
+        i,j = pos
+        dX = xyz_rel[j, :] - xyz_rel[i, :]
+        dx = xyz_def[j, :] - xyz_def[i, :]
+                
+        # Generate intermediate matrices
+        D[i, :, :] += np.dot(dX.reshape((-1,1)), dX.reshape((1,-1))) * weights[pos]
+        A[i, :, :] += np.dot(dx.reshape((-1,1)), dX.reshape((1,-1))) * weights[pos]   
+    
+    return D, A
+
+
+def deformation_gradient_fast(weights, xyz_rel, xyz_def):
+    """
+    Calculate the deformation gradient tensor for each (F=dx/dX) using the
+    approach from [Gullet et al,] (Eq. X), or Eq. 17 in [Zimmerman et al, 2009]
+    In solving, note that D.T*U=A.T -> U.T*D=A -> F=U.T.
+    
+    This implementation requires weights in the form of a dictionary.
+    """
+    D, A = intermediate_matrixes(weights, xyz_rel, xyz_def)
+    
+    num_res = D.shape[0]
+    F = np.zeros((num_res, 3, 3))
+        
+    for i in range(num_res):
+        F[i, :, :] = spla.solve(D[i, :, :].T, A[i, :, :].T).T
+        
+    return F
 
 
 def deformation_gradient(weights, xyz_rel, xyz_def):

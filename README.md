@@ -16,7 +16,6 @@ pip install proFSA
 - `biopython` (tested with vX.Y)
 - `urllib` (tested with vX.Y)
 
-
 ## Package description
 
 The folder package is `fsa`, which contains the following files
@@ -77,6 +76,6 @@ def_dict = seq.aligned_dict(def_pps, def_idx)
 com_res = seq.common(rel_dict, def_dict)
 ```
 - check that the second order works
-- implement numba
+- implement numba for other weight methods
 - add to pypi
 - use black to polish code

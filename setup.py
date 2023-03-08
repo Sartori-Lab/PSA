@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='proFSA',
-    version='0.11',
+    version='0.12',
     license='MIT',
     author="Pablo Sartori",
     author_email='psartor@igc.gulbenkian.pt',
@@ -17,6 +17,7 @@ setup(
         "scipy",
         "biopython",
         "urllib3",
+        "numba",
     ],
     py_modules=["fsa/elastic", "fsa/forms", "fsa/load", "fsa/sequence", "fsa/spatial"],
 )
