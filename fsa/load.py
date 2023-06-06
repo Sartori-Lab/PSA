@@ -49,6 +49,19 @@ def single_structure(name, relabel=None, transform=None, model_id=0,
     return pps_sorted
 
 
+def get_chain_name(chain):
+    """
+    Return the ID of a chain or a polypeptide.
+    """
+    
+    if type(chain) == PDB.Chain.Chain:
+        return chain.get_id()
+    elif type(chain) == PDB.Polypeptide.Polypeptide:
+        return chain[0].get_parent().get_id()
+    elif type(chain) == list:
+        return chain[0][0].get_parent().get_id()
+    
+
 def load_chains(structure, relabel=None, transform=None):
     """
     Load all chains performing, when necessary, relabeling and assembly trans-

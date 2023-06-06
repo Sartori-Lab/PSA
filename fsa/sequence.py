@@ -84,8 +84,30 @@ def download_fasta(up_id):
         infile.write(url.read())
         infile.close()
 
+def pairwise_alignment(rel_pps, def_pps):
+    """
+    Perform the default alignment pipeline for two structures with the
+    same number of chains
+    """
+    
+    # Generate a list of None's, we use sequence of residues from PDB
+    uni_ids = [None] * len(rel_pps)
+    my_ref_seqs = generate_reference(rel_pps, uni_ids)
+    
+    # Align both structures to reference
+    rel_idx = align(rel_pps, my_ref_seqs)
+    def_idx = align(def_pps, my_ref_seqs)
+    
+    # Obtain a dictionary with residues that aligned correctly
+    rel_dict = aligned_dict(rel_pps, rel_idx)
+    def_dict = aligned_dict(def_pps, def_idx)
+    
+    # Intersect the aligned residues 
+    com_res = common(rel_dict, def_dict)
 
-def align(pps, ref_seqs): # CHANGE TO align_pps
+    return com_res, rel_dict, def_dict
+
+def align(pps, ref_seqs):
     """
     Alignment the polypeptides in each chain of each protein to the reference
     sequences using local alignment. It returns the indices of the

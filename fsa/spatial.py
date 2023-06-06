@@ -14,13 +14,15 @@ from Bio import PDB
 # Internal
 from . import load 
 
-
-def align_structures(rel_pps, def_pps, al_chain_ids, common_res=None,
+def align_structures(rel_pps, def_pps, al_chain_ids=None, common_res=None,
                      rel_dict=None, def_dict=None):
     """
     Perform spatial alignment of deformed polypeptides to reference polypep-
-    tides for the given chains.
-    """
+    tides for the given chains. If no chain id is given, use all structure
+    """    
+    if not al_chain_ids:
+        al_chain_ids = [load.get_chain_name(chain) for chain in rel_pps]
+    
     # Load relaxed/deformed chains to align
     rel_al_ch = load.choose_chains(rel_pps, al_chain_ids)
     def_al_ch = load.choose_chains(def_pps, al_chain_ids)
@@ -38,8 +40,8 @@ def align_structures(rel_pps, def_pps, al_chain_ids, common_res=None,
     super_imposer.apply(def_all_atom)
 
     return  # need to specify which atoms, otherwise can not perform alignment!
-
-
+    
+    
 def cylinder_axis(xyz, phi_ini=.1):
 
     """

@@ -68,6 +68,81 @@ def linear_weights(xyz, parameters=[6., 8.]):
     return weights
 
 
+def minimal_weights(xyz, parameters=[3]):
+    """
+    Weight matrix is the minimal required to solve the equations of the defor-
+    mation gradients. That is, the three nearest neighbors.
+    """
+    # Read parameters, required atoms
+    req = int(parameters[0])
+
+    # Calculate distances
+    res_dis = distance.pdist(xyz)
+    res_dis = distance.squareform(res_dis)
+
+    # Select required nearest-neighbors + 1 (self)
+    nn_req = np.argsort(res_dis)[:, :req + 1]
+
+    # Create weight matrix
+    weights = np.zeros_like(res_dis)
+    for i, nn in enumerate(nn_req):
+        weights[i][nn] = 1.
+
+    return weights
+
+
+def compute_weights_fast(xyz_list, method = "intersect", parameters=[6., 8.]):
+    """
+    Calls one of the three methods to compute weights using numba speed-up
+    procedure
+    """
+    cases = {"intersect": intersect_weights_fast,
+             "linear": linear_weights_fast,
+             "minimal": minimal_weights_fast}
+    
+    return cases[method](xyz_list, parameters)
+
+
+@jit(nopython=True) 
+def intersect_weights_fast(xyz_list, parameters = [8.]):
+    """
+    Calculate binary neighbourhoods considering atoms within a a given
+    radius shared among the list of coordinates. Returns a dictionary with
+    non-zero weights as values and indexes of atoms as keys.
+    """
+    r = float(parameters[0])
+    
+    weights = dict()
+    all_sets = []
+    
+    for xyz in xyz_list:
+        current_set = set()
+        
+        for i in range(len(xyz)):
+            for j in range(i+1, len(xyz)):
+                # Calculates pairwise distance between atoms
+                distance = 0
+                for k in range(3):
+                    distance += np.power(xyz[i,k] - xyz[j,k], 2)
+                distance = np.sqrt(distance)
+    
+                # Keeps all pairs within radius
+                if(distance < r):
+                    current_set.add((i,j))
+                    current_set.add((j,i))
+    
+        all_sets.append(current_set)
+    
+    final_set = all_sets[0]
+    for i in range(1, len(xyz_list)):
+        final_set.intersection_update(all_sets[i])
+    
+    for pair in final_set:
+        weights[pair] = 1
+    
+    return weights
+
+
 @jit(nopython = True)
 def linear_weights_fast(xyz_list, parameters = (6.,8.)):
     """
@@ -76,7 +151,6 @@ def linear_weights_fast(xyz_list, parameters = (6.,8.)):
     dictionary with the pairs of position indexes as keys and the weights as 
     values. Absent pairs of coordinates have zero weight.
     """
-    
     r1, r2 = parameters[0], parameters[1]
     
     weights = dict()
@@ -105,26 +179,30 @@ def linear_weights_fast(xyz_list, parameters = (6.,8.)):
     return weights
 
 
-def minimal_weights(xyz, parameters=[3]):
+@jit(nopython=True) 
+def minimal_weights_fast(xyz_list, parameters = (3)):
     """
     Weight matrix is the minimal required to solve the equations of the defor-
-    mation gradients. That is, the three nearest neighbors.
+    mation gradients. That is, the 'n' nearest neighbors. Only uses the first
+    structure given.
     """
-    # Read parameters, required atoms
-    req = int(parameters[0])
-
-    # Calculate distances
-    res_dis = distance.pdist(xyz)
-    res_dis = distance.squareform(res_dis)
-
-    # Select required nearest-neighbors + 1 (self)
-    nn_req = np.argsort(res_dis)[:, :req + 1]
-
-    # Create weight matrix
-    weights = np.zeros_like(res_dis)
-    for i, nn in enumerate(nn_req):
-        weights[i][nn] = 1.
-
+    n = int(parameters[0])
+    xyz = xyz_list[0]
+    
+    weights = dict()
+    
+    for i in range(len(xyz)):
+        distance = np.zeros(len(xyz))
+        for j in range(len(xyz)):
+            # Calculates pairwise distance between atoms
+            for k in range(3):
+                distance[j] += np.power(xyz[i,k] - xyz[j,k], 2)
+        
+        distance[distance == 0] = np.inf
+        for k in range(n):
+            weights[(i, np.argmin(distance))] = 1
+            distance[distance == min(distance)] = np.inf
+            
     return weights
 
 
