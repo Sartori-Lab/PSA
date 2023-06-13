@@ -302,3 +302,27 @@ def save_bfactor(name, bfact=None, ext='_rot_clust', path = './', file_type='pdb
     writer.set_structure(structure)
     new_filename = filename[:-4] + ext + '.' + file_type
     writer.save(new_filename)
+    
+def save_txt(rel_pdb, def_pdb, variables, 
+             labels, ext = "", path = "./"):
+    """
+    Creates a .txt file to contain data from variables received as argument.
+    The variables should be a vector of arrays for different quantities. The
+    length of each array should match the number of entries on the atom labels.
+    ex: variables = [stretches[:, 0]] to save \lambda_1.
+    """
+
+    filename = path + rel_pdb + "-" + def_pdb
+    if ext:
+        filename += "-" + ext
+    
+    with open(filename + ".txt", "w") as f:
+        for label, i in zip(labels, range(len(labels))):
+            line = str(label[0]) + ": "
+            
+            for var in variables:
+                line += str(var[i]) + " "
+            line = line[:-1]  + "\n"
+            
+            f.write(line)
+    return
