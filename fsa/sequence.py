@@ -83,6 +83,7 @@ def download_fasta(up_id):
         infile = open(filename, 'wb')
         infile.write(url.read())
         infile.close()
+    return
 
 def pairwise_alignment(rel_pps, def_pps):
     """

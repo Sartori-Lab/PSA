@@ -94,9 +94,10 @@ def minimal_weights(xyz, parameters=[3]):
 def compute_weights_fast(xyz_list, method = "intersect", parameters=[6., 8.]):
     """
     Calls one of the three methods to compute weights using numba speed-up
-    procedure
+    procedure.
     """
     cases = {"intersect": intersect_weights_fast,
+             "union": union_weights_fast,
              "linear": linear_weights_fast,
              "minimal": minimal_weights_fast}
     
@@ -104,15 +105,13 @@ def compute_weights_fast(xyz_list, method = "intersect", parameters=[6., 8.]):
 
 
 @jit(nopython=True) 
-def intersect_weights_fast(xyz_list, parameters = [8.]):
+def binary_weights_fast(xyz_list, parameters):
     """
-    Calculate binary neighbourhoods considering atoms within a a given
-    radius shared among the list of coordinates. Returns a dictionary with
-    non-zero weights as values and indexes of atoms as keys.
+    Calculate binary neighbourhoods considering atoms within a given
+    radius shared among the list of coordinates. 
     """
     r = float(parameters[0])
     
-    weights = dict()
     all_sets = []
     
     for xyz in xyz_list:
@@ -133,9 +132,44 @@ def intersect_weights_fast(xyz_list, parameters = [8.]):
     
         all_sets.append(current_set)
     
+    return all_sets
+
+
+@jit(nopython=True) 
+def intersect_weights_fast(xyz_list, parameters = [8.]):
+    """
+    Calculates the intersection of indexes given by the binary assignment approach.
+    Returns a dictionary with non-zero weights as values and indexes of atoms as 
+    keys.
+    """
+    
+    weights = dict()
+    
+    all_sets = binary_weights_fast(xyz_list, parameters)
     final_set = all_sets[0]
     for i in range(1, len(xyz_list)):
         final_set.intersection_update(all_sets[i])
+    
+    for pair in final_set:
+        weights[pair] = 1
+    
+    return weights
+
+
+@jit(nopython=True) 
+def union_weights_fast(xyz_list, parameters = [8.]):
+    """
+    Calculates the union of indexes given by the binary assignment approach.
+    Returns a dictionary with non-zero weights as values and indexes of atoms as 
+    keys.
+    """
+    
+    weights = dict()
+    
+    all_sets = binary_weights_fast(xyz_list, parameters)
+    final_set = all_sets[0]
+    for i in range(1, len(xyz_list)):
+        final_set.update(all_sets[i])
     
     for pair in final_set:
         weights[pair] = 1
