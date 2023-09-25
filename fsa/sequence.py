@@ -20,38 +20,33 @@ import numpy as np
 from . import load
 
 
-def generate_reference(ref_pps, uniprot_ids):
+def generate_reference(ref_pps):
     """
-    Generate list of reference sequence objects. Either from uniprot_ids
-    entries, or from the reference structure.
+    Generate dictionary of reference sequence objects from the reference 
+    structure.
     """
-    # Debug input
-    assert len(ref_pps) == len(uniprot_ids),\
-        "More/less chains than uniprot ids"
-
+    
     # Loop over uniprot chain ids
-    reference_seqs = []
-    for ind, up_id in enumerate(uniprot_ids):
-        # Download and read fasta seq
-        if up_id:
-            download_fasta(up_id)
-            ref_seq = SeqIO.read('data/seq/' + up_id + '.fa',
-                                 format='fasta')
-        # Or generate seq from ref_pps
-        else:
-            # Get pps in chain
-            pp_seqs = [pp.get_sequence() for pp in ref_pps[ind]]
-            seq_join = pp_seqs[0]
-            # Stitch pps and generate seq
-            for seq in pp_seqs[1:]:
-                seq_join += seq
-            # Generate reference sequence
-            ref_seq = SeqIO.SeqRecord(seq_join,
-                                      id='query',
-                                      description='')
-            # Fix sequences of unknown residues
-            ref_seq = fix_unknown_sequence(ref_seq)
-        reference_seqs.append(ref_seq)
+    reference_seqs = {}
+    
+    for chain in ref_pps:
+        # Get pps in chain
+        pp_seqs = [pp.get_sequence() for pp in chain]
+        chain_id = load.get_chain_name(chain)
+        seq_join = pp_seqs[0]
+        
+        # Stitch pps and generate seq
+        for seq in pp_seqs[1:]:
+            seq_join += seq
+        
+        # Generate reference sequence
+        ref_seq = SeqIO.SeqRecord(seq_join,
+                                  id = chain_id,
+                                  description = '')
+        
+        # Fix sequences of unknown residues
+        ref_seq = fix_unknown_sequence(ref_seq)
+        reference_seqs[chain_id] = ref_seq
     return reference_seqs
 
 
@@ -91,17 +86,15 @@ def pairwise_alignment(rel_pps, def_pps):
     same number of chains
     """
     
-    # Generate a list of None's, we use sequence of residues from PDB
-    uni_ids = [None] * len(rel_pps)
-    my_ref_seqs = generate_reference(rel_pps, uni_ids)
-    
+    my_ref_seqs = generate_reference(rel_pps)
+
     # Align both structures to reference
     rel_idx = align(rel_pps, my_ref_seqs)
     def_idx = align(def_pps, my_ref_seqs)
     
     # Obtain a dictionary with residues that aligned correctly
-    rel_dict = aligned_dict(rel_pps, rel_idx)
-    def_dict = aligned_dict(def_pps, def_idx)
+    rel_dict = aligned_dict(rel_pps, rel_idx, my_ref_seqs)
+    def_dict = aligned_dict(def_pps, def_idx, my_ref_seqs)
     
     # Intersect the aligned residues 
     com_res = common(rel_dict, def_dict)
@@ -122,15 +115,23 @@ def align(pps, ref_seqs):
 
     # For each chain&pep, start/stop indices of aligned segments from ref/pep
     start_stop = []  # ((ref_st1,ref_sp1),...,(N)), ((pep_st1,pep_sp1),...,(N))
-
+    zeros = np.zeros((2,1,2), dtype = int)
+    
     # Loop over proteins, chains and peptides
-    for (chain, ref_seq) in zip(pps, ref_seqs):
+    for chain in pps:
+        chain_id = load.get_chain_name(chain)
         start_stop.append([])
-        for pep in chain:
-            # Align peptide ro reference sequence
-            alignments = aligner.align(ref_seq.seq, pep.get_sequence())
-            start_stop[-1].append(alignments[0].aligned)
-
+        
+        if chain_id in ref_seqs:
+            ref_seq = ref_seqs[chain_id]
+            for pep in chain:
+                # Align peptide ro reference sequence
+                alignments = aligner.align(ref_seq.seq, pep.get_sequence())
+                start_stop[-1].append(alignments[0].aligned)
+        else:
+            for pep in chain:
+                start_stop[-1].append(zeros)
+                
     # Remove temp files
     for f in glob.glob("tmp/alignment_*"):
         os.remove(f)
@@ -164,7 +165,7 @@ def align_seqs(seq_pair):
     return masks, sc
 
 
-def aligned_dict(pps, start_stop):
+def aligned_dict(pps, start_stop, ref_seqs):
     """
     A dictionary with keys the labels of the aligned residues in the pdb
     language, and values the labels in a self-made language that uses the
@@ -173,9 +174,14 @@ def aligned_dict(pps, start_stop):
     """
 
     aligned = {}
-
+    ref_idx = list(ref_seqs.keys())
+    
     # Loop over chains, peptides, residues and aligned segments
     for c_i, chain in enumerate(pps):
+        chain_id = load.get_chain_name(chain)
+        if chain_id in ref_seqs:
+            idx = ref_idx.index(chain_id)
+        
         for p_i, pep in enumerate(chain):
             for r_i, res in enumerate(pep):
                 for s_i in range(len(start_stop[c_i][p_i][1])):
@@ -193,7 +199,7 @@ def aligned_dict(pps, start_stop):
 
                         # Store entry if residue passes test
                         if load.test_residue(res):
-                            aligned[res.full_id] = (c_i, n_num)
+                            aligned[res.full_id] = (idx, n_num)
 
     return aligned
 

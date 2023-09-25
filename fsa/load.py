@@ -86,17 +86,38 @@ def load_chains(structure, relabel=None, transform=None):
 def relabel_chains(chains, relabel):
     """
     Relabel the chains, keeping the chains consistent at all times by using
-    tempral dummy chain_ids
+    temporary dummy chain_ids. Chains mapped to empty strings ("") are 
+    removed.
     """
-    # Initial relabeling, with dummy id
+    
     for chain in chains:
         if chain.id in relabel.keys():
+            if relabel[chain.id] == "":
+                relabel.pop(chain.id)
+                chain.id = chain.id + "_removed"
+    
+    for chain in chains:
+        if "removed" in chain.id:
+            del chain
+            
+    keys = relabel.keys()
+    values = relabel.values()
+    
+    if len(values) != len(set(values)):
+        raise Exception("Relabelled chains contain repeated ids")
+    
+    # Initial relabeling, with dummy id
+    for chain in chains:
+        if chain.id in keys:
             chain.id = relabel[chain.id] + '_'
 
     # Adjust labeling, final id
     for chain in chains:
         if chain.id[-1] == '_':
-            chain.id = chain.id[:-1]
+            try:
+                chain.id = chain.id[:-1]
+            except ValueError:
+                raise Exception("Relabelled chains contain repeated ids")
 
     return
 
