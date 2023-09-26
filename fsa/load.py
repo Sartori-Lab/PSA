@@ -90,15 +90,16 @@ def relabel_chains(chains, relabel):
     removed.
     """
     
-    for chain in chains:
+    rm = []
+    for chain, i in zip(chains, range(len(chains))):
         if chain.id in relabel.keys():
             if relabel[chain.id] == "":
                 relabel.pop(chain.id)
-                chain.id = chain.id + "_removed"
+                rm.append(i)
     
-    for chain in chains:
-        if "removed" in chain.id:
-            del chain
+    for i in rm[::-1]:
+        chains.pop(i)
+            
             
     keys = relabel.keys()
     values = relabel.values()
