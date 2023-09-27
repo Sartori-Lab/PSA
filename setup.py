@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='proFSA',
-    version='0.15',
+    version='0.16',
     license='MIT',
     author="Pablo Sartori",
     author_email='psartor@igc.gulbenkian.pt',

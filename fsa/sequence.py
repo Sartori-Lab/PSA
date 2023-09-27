@@ -30,25 +30,33 @@ def generate_reference(ref_pps):
     reference_seqs = {}
     
     for chain in ref_pps:
-        # Get pps in chain
-        pp_seqs = [pp.get_sequence() for pp in chain]
+        seq_join = generate_sequence(chain)
         chain_id = load.get_chain_name(chain)
-        seq_join = pp_seqs[0]
-        
-        # Stitch pps and generate seq
-        for seq in pp_seqs[1:]:
-            seq_join += seq
-        
+    
         # Generate reference sequence
         ref_seq = SeqIO.SeqRecord(seq_join,
                                   id = chain_id,
-                                  description = '')
+                                  description = "")
         
         # Fix sequences of unknown residues
         ref_seq = fix_unknown_sequence(ref_seq)
         reference_seqs[chain_id] = ref_seq
     return reference_seqs
 
+def generate_sequence(chain):
+    """
+    Collapses the sequence(s) from a single or multiple polypeptides in 
+    a string
+    """
+    # Get pps in chain
+    pp_seqs = [pp.get_sequence() for pp in chain]
+    seq_join = pp_seqs[0]
+        
+    # Stitch pps and generate seq
+    for seq in pp_seqs[1:]:
+        seq_join += seq
+    
+    return seq_join
 
 def fix_unknown_sequence(sequence):
     """
@@ -113,24 +121,24 @@ def align(pps, ref_seqs):
     aligner.open_gap_score = -.5
     aligner.extend_gap_score = -.1
 
-    # For each chain&pep, start/stop indices of aligned segments from ref/pep
+    # For each chain, start/stop indices of aligned segments from ref
     start_stop = []  # ((ref_st1,ref_sp1),...,(N)), ((pep_st1,pep_sp1),...,(N))
     zeros = np.zeros((2,1,2), dtype = int)
     
-    # Loop over proteins, chains and peptides
+    # Loop over proteins and chains
     for chain in pps:
         chain_id = load.get_chain_name(chain)
-        start_stop.append([])
         
+        # For chains contained in the reference
         if chain_id in ref_seqs:
             ref_seq = ref_seqs[chain_id]
-            for pep in chain:
-                # Align peptide ro reference sequence
-                alignments = aligner.align(ref_seq.seq, pep.get_sequence())
-                start_stop[-1].append(alignments[0].aligned)
+            seq = generate_sequence(chain)
+            alignments = aligner.align(ref_seq.seq, seq)
+            start_stop.append(alignments[0].aligned)
+        
+        # For chains absent in the reference
         else:
-            for pep in chain:
-                start_stop[-1].append(zeros)
+            start_stop.append(zeros)
                 
     # Remove temp files
     for f in glob.glob("tmp/alignment_*"):
@@ -181,25 +189,27 @@ def aligned_dict(pps, start_stop, ref_seqs):
         chain_id = load.get_chain_name(chain)
         if chain_id in ref_seqs:
             idx = ref_idx.index(chain_id)
+        res_i = 0
         
-        for p_i, pep in enumerate(chain):
-            for r_i, res in enumerate(pep):
-                for s_i in range(len(start_stop[c_i][p_i][1])):
-                    seg_ref_st = start_stop[c_i][p_i][0][s_i][0]
-                    seg_ref_sp = start_stop[c_i][p_i][0][s_i][1]
-                    seg_pep_st = start_stop[c_i][p_i][1][s_i][0]
-                    seg_pep_sp = start_stop[c_i][p_i][1][s_i][1]
-                    if r_i >= seg_pep_st and r_i < seg_pep_sp:
-                        n_num = r_i + seg_ref_st - seg_pep_st
-                        # Test duplicates
-                        # assert res.full_id not in aligned.keys(),\
-                        # 'Duplicated key in aligned dict'
-                        # assert (c_i, n_num) not in aligned.values(),\
-                        # 'Duplicated value in aligned dict'
-
+        for pep in chain:
+            for res in pep:
+                for s_i in range(len(start_stop[c_i][1])):
+                    # Indexes from the reference
+                    seg_ref_st = start_stop[c_i][0][s_i][0]
+                    seg_ref_sp = start_stop[c_i][0][s_i][1]
+                    
+                    # Indexes from the query
+                    seg_qry_st = start_stop[c_i][1][s_i][0]
+                    seg_qry_sp = start_stop[c_i][1][s_i][1]
+                    
+                    # Verify if the residue is in the alignment range
+                    if res_i >= seg_qry_st and res_i < seg_qry_sp:
+                        n_num = res_i + seg_ref_st - seg_qry_st
+                        
                         # Store entry if residue passes test
                         if load.test_residue(res):
                             aligned[res.full_id] = (idx, n_num)
+                res_i += 1                
 
     return aligned
 
