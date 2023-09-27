@@ -64,13 +64,23 @@ def get_chain_name(chain):
 
 def load_chains(structure, relabel=None, transform=None):
     """
-    Load all chains performing, when necessary, relabeling and assembly trans-
-    formations.
+    Load chains performing relabels, transformations, and removals, when
+    necessary.
     """
     chains = []
+    remove = []
+    
+    # Split relabel into true relabelling and removal
+    if relabel:    
+        for item in tuple(relabel.items()):
+            if item[1] == "":
+                remove.append(item[0])
+                relabel.pop(item[0])
+    
     # Load all chains
     for chain in structure.get_chains():
-        chains.append(chain)
+        if chain.id not in remove:
+            chains.append(chain)
 
     # Perform relabeling, when necessary
     if relabel:
@@ -89,27 +99,9 @@ def relabel_chains(chains, relabel):
     temporary dummy chain_ids. Chains mapped to empty strings ("") are 
     removed.
     """
-    
-    rm = []
-    for chain, i in zip(chains, range(len(chains))):
-        if chain.id in relabel.keys():
-            if relabel[chain.id] == "":
-                relabel.pop(chain.id)
-                rm.append(i)
-    
-    for i in rm[::-1]:
-        chains.pop(i)
-            
-            
-    keys = relabel.keys()
-    values = relabel.values()
-    
-    if len(values) != len(set(values)):
-        raise Exception("Relabelled chains contain repeated ids")
-    
     # Initial relabeling, with dummy id
     for chain in chains:
-        if chain.id in keys:
+        if chain.id in relabel.keys():
             chain.id = relabel[chain.id] + '_'
 
     # Adjust labeling, final id
