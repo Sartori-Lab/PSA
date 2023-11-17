@@ -12,7 +12,8 @@ from scipy.optimize import least_squares
 from Bio import PDB
 
 # Internal
-from . import load 
+from . import load
+from .spatial import coordinates_to_polar
 
 
 def noise(xyz, sigma):
