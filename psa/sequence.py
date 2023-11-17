@@ -15,8 +15,6 @@ import re
 import glob
 import warnings
 import numpy as np
-
-# Internal
 from . import load
 
 
@@ -25,23 +23,22 @@ def generate_reference(ref_pps):
     Generate dictionary of reference sequence objects from the reference 
     structure.
     """
-    
+
     # Loop over uniprot chain ids
     reference_seqs = {}
-    
+
     for chain in ref_pps:
         seq_join = generate_sequence(chain)
         chain_id = load.get_chain_name(chain)
-    
+
         # Generate reference sequence
-        ref_seq = SeqIO.SeqRecord(seq_join,
-                                  id = chain_id,
-                                  description = "")
-        
+        ref_seq = SeqIO.SeqRecord(seq_join, id=chain_id, description="")
+
         # Fix sequences of unknown residues
         ref_seq = fix_unknown_sequence(ref_seq)
         reference_seqs[chain_id] = ref_seq
     return reference_seqs
+
 
 def generate_sequence(chain):
     """
@@ -51,12 +48,13 @@ def generate_sequence(chain):
     # Get pps in chain
     pp_seqs = [pp.get_sequence() for pp in chain]
     seq_join = pp_seqs[0]
-        
+
     # Stitch pps and generate seq
     for seq in pp_seqs[1:]:
         seq_join += seq
-    
+
     return seq_join
+
 
 def fix_unknown_sequence(sequence):
     """
@@ -65,11 +63,11 @@ def fix_unknown_sequence(sequence):
     only occurs if in build_peptides we have aa_only=0.
     """
 
-    if sequence.seq.count('X') == len(sequence):
+    if sequence.seq.count("X") == len(sequence):
         print(sequence)
-        warnings.warn('Aligning pps made of unknown res.', stacklevel=2)
-        s = 'DTS' * (len(sequence)//3) + 'DTS'[:len(sequence) % 3]
-        fixed_sequence = SeqRecord(id='query', description='', seq=Seq(s))
+        warnings.warn("Aligning pps made of unknown res.", stacklevel=2)
+        s = "DTS" * (len(sequence) // 3) + "DTS"[: len(sequence) % 3]
+        fixed_sequence = SeqRecord(id="query", description="", seq=Seq(s))
         return sequence
     else:
         return sequence
@@ -79,35 +77,37 @@ def download_fasta(up_id):
     """
     Download fasta sequence if it is not present
     """
-    filename = 'data/seq/' + up_id + '.fa'
+    filename = "data/seq/" + up_id + ".fa"
     if not os.path.exists(filename):
-        target_url = 'http://www.uniprot.org/uniprot/' + up_id + '.fasta'
+        target_url = "http://www.uniprot.org/uniprot/" + up_id + ".fasta"
         url = urlopen(target_url)
-        infile = open(filename, 'wb')
+        infile = open(filename, "wb")
         infile.write(url.read())
         infile.close()
     return
+
 
 def pairwise_alignment(rel_pps, def_pps):
     """
     Perform the default alignment pipeline for two structures with the
     same number of chains
     """
-    
+
     my_ref_seqs = generate_reference(rel_pps)
 
     # Align both structures to reference
     rel_idx = align(rel_pps, my_ref_seqs)
     def_idx = align(def_pps, my_ref_seqs)
-    
+
     # Obtain a dictionary with residues that aligned correctly
     rel_dict = aligned_dict(rel_pps, rel_idx, my_ref_seqs)
     def_dict = aligned_dict(def_pps, def_idx, my_ref_seqs)
-    
-    # Intersect the aligned residues 
+
+    # Intersect the aligned residues
     com_res = common(rel_dict, def_dict)
 
     return com_res, rel_dict, def_dict
+
 
 def align(pps, ref_seqs):
     """
@@ -117,46 +117,46 @@ def align(pps, ref_seqs):
     """
     # Load sequence aligner
     aligner = Align.PairwiseAligner()
-    aligner.mode = 'local'
-    aligner.open_gap_score = -.5
-    aligner.extend_gap_score = -.1
+    aligner.mode = "local"
+    aligner.open_gap_score = -0.5
+    aligner.extend_gap_score = -0.1
 
     # For each chain, start/stop indices of aligned segments from ref
     start_stop = []  # ((ref_st1,ref_sp1),...,(N)), ((pep_st1,pep_sp1),...,(N))
-    zeros = np.zeros((2,1,2), dtype = int)
-    
+    zeros = np.zeros((2, 1, 2), dtype=int)
+
     # Loop over proteins and chains
     for chain in pps:
         chain_id = load.get_chain_name(chain)
-        
+
         # For chains contained in the reference
         if chain_id in ref_seqs:
             ref_seq = ref_seqs[chain_id]
             seq = generate_sequence(chain)
             alignments = aligner.align(ref_seq.seq, seq)
             start_stop.append(alignments[0].aligned)
-        
+
         # For chains absent in the reference
         else:
             start_stop.append(zeros)
-                
+
     # Remove temp files
     for f in glob.glob("tmp/alignment_*"):
         os.remove(f)
-        
+
     return start_stop
 
 
 def align_seqs(seq_pair):
-    '''
+    """
     Align a pair of sequences, provided as strings, and report corresponding
     masks for the aligned residues as well as the alignment score
-    '''
+    """
     # Load the aligner
     aligner = Align.PairwiseAligner()
-    aligner.mode = 'local'
-    aligner.open_gap_score = -.5
-    aligner.extend_gap_score = -.1
+    aligner.mode = "local"
+    aligner.open_gap_score = -0.5
+    aligner.extend_gap_score = -0.1
 
     # Align seqs, get start/stop and score
     al = aligner.align(seq_pair[0], seq_pair[1])
@@ -164,11 +164,13 @@ def align_seqs(seq_pair):
     sc = al.score
 
     # Create masks
-    masks = [np.zeros(len(seq_pair[0]), dtype='bool'),
-             np.zeros(len(seq_pair[1]), dtype='bool')]
+    masks = [
+        np.zeros(len(seq_pair[0]), dtype="bool"),
+        np.zeros(len(seq_pair[1]), dtype="bool"),
+    ]
     for m, s in zip(masks, ss):
         for el in s:
-            m[el[0]:el[1]] = 1
+            m[el[0] : el[1]] = 1
 
     return masks, sc
 
@@ -183,33 +185,33 @@ def aligned_dict(pps, start_stop, ref_seqs):
 
     aligned = {}
     ref_idx = list(ref_seqs.keys())
-    
+
     # Loop over chains, peptides, residues and aligned segments
     for c_i, chain in enumerate(pps):
         chain_id = load.get_chain_name(chain)
         if chain_id in ref_seqs:
             idx = ref_idx.index(chain_id)
         res_i = 0
-        
+
         for pep in chain:
             for res in pep:
                 for s_i in range(len(start_stop[c_i][1])):
                     # Indexes from the reference
                     seg_ref_st = start_stop[c_i][0][s_i][0]
                     seg_ref_sp = start_stop[c_i][0][s_i][1]
-                    
+
                     # Indexes from the query
                     seg_qry_st = start_stop[c_i][1][s_i][0]
                     seg_qry_sp = start_stop[c_i][1][s_i][1]
-                    
+
                     # Verify if the residue is in the alignment range
                     if res_i >= seg_qry_st and res_i < seg_qry_sp:
                         n_num = res_i + seg_ref_st - seg_qry_st
-                        
+
                         # Store entry if residue passes test
                         if load.test_residue(res):
                             aligned[res.full_id] = (idx, n_num)
-                res_i += 1                
+                res_i += 1
 
     return aligned
 

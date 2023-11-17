@@ -3,15 +3,10 @@ This file contains functions that create different elemantal deformations. The
 goal is to compare them with analytical results
 """
 
-# Numerical
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 from scipy.optimize import least_squares
-
-# Biological
 from Bio import PDB
-
-# Internal
 from . import load
 from .spatial import coordinates_to_polar
 
@@ -30,7 +25,7 @@ def noise(xyz, sigma):
     return xyz_n
 
 
-def generate_rod(r0=20., z0=180., theta0=2*np.pi, ds=4.):
+def generate_rod(r0=20.0, z0=180.0, theta0=2 * np.pi, ds=4.0):
     """
     Generate a cylindrical rod with the provided dimensions (Radius height, in
     A), and the provided spacing among atoms (ds)
@@ -53,14 +48,12 @@ def generate_rod(r0=20., z0=180., theta0=2*np.pi, ds=4.):
     return xyz
 
 
-def deform(xyz, method='twist', d=0.01):
+def deform(xyz, method="twist", d=0.01):
     """
     Take as input a set of coordinates, a method, and a deformation parameter;
     and select the corresponding deformation function
     """
-    cases = {'twist': twist,
-             'spin': spin,
-             'radial': radial_extension}
+    cases = {"twist": twist, "spin": spin, "radial": radial_extension}
 
     return cases[method](xyz, d)
 
@@ -87,7 +80,7 @@ def twist(xyz, d=0.01):
     return xyz_d
 
 
-def radial_extension(xyz, d=.5):
+def radial_extension(xyz, d=0.5):
     """
     Apply a unuform radial extension to the given (euclidean) coordinates
     """

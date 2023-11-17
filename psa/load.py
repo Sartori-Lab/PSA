@@ -8,27 +8,30 @@ from urllib.request import urlretrieve
 import os
 import numpy as np
 
-# Chain_ids should be a dictionary. Also, there should be a fucntion to
-# download this
 
-
-def single_structure(name, relabel=None, transform=None, model_id=0,
-                     chain_ids=None, path='./', file_type='pdb'):
+def single_structure(
+    name,
+    relabel=None,
+    transform=None,
+    model_id=0,
+    chain_ids=None,
+    path="./",
+    file_type="pdb"):
     """
     Load PDB file, read structure and generate list of
     polypeptide objects (several polypeptides consti-
     tute a chain).
     """
     # Load parser
-    if file_type == 'pdb':
+    if file_type == "pdb":
         parser = PDB.PDBParser()
-    elif file_type == 'cif':
+    elif file_type == "cif":
         parser = PDB.MMCIFParser()
     ppb = PDB.PPBuilder()
 
     # Download and load pdb/cif file
     download_file(name, path, file_type)
-    filename = path + name + '.' + file_type
+    filename = path + name + "." + file_type
     structure = parser.get_structure(name, filename)
 
     # Load chains, maybe relabel
@@ -53,14 +56,14 @@ def get_chain_name(chain):
     """
     Return the ID of a chain or a polypeptide.
     """
-    
+
     if type(chain) == PDB.Chain.Chain:
         return chain.get_id()
     elif type(chain) == PDB.Polypeptide.Polypeptide:
         return chain[0].get_parent().get_id()
     elif type(chain) == list:
         return chain[0][0].get_parent().get_id()
-    
+
 
 def load_chains(structure, relabel=None, transform=None):
     """
@@ -69,14 +72,14 @@ def load_chains(structure, relabel=None, transform=None):
     """
     chains = []
     remove = []
-    
+
     # Split relabel into true relabelling and removal
-    if relabel:    
+    if relabel:
         for item in tuple(relabel.items()):
             if item[1] == "":
                 remove.append(item[0])
                 relabel.pop(item[0])
-    
+
     # Load all chains
     for chain in structure.get_chains():
         if chain.id not in remove:
@@ -102,11 +105,11 @@ def relabel_chains(chains, relabel):
     # Initial relabeling, with dummy id
     for chain in chains:
         if chain.id in relabel.keys():
-            chain.id = relabel[chain.id] + '_'
+            chain.id = relabel[chain.id] + "_"
 
     # Adjust labeling, final id
     for chain in chains:
-        if chain.id[-1] == '_':
+        if chain.id[-1] == "_":
             try:
                 chain.id = chain.id[:-1]
             except ValueError:
@@ -130,22 +133,23 @@ def transform_chains(chains, transform):
             # Create new chain
             chain_i = chain.copy()
             # Transformation chain
-            chain_i.transform(transform[i*3:(i+1)*3, :3].T,
-                              transform[i*3:(i+1)*3, 3])
+            chain_i.transform(
+                transform[i * 3 : (i + 1) * 3, :3].T, transform[i * 3 : (i + 1) * 3, 3]
+            )
             # Rename chain
-            chain_i.id = chain_i.id + '-' + str(i)
+            chain_i.id = chain_i.id + "-" + str(i)
             chains_new.append(chain_i)
 
     return chains_new
 
 
-def download_file(name, path='./', file_type='pdb'):
+def download_file(name, path="./", file_type="pdb"):
     """
     Download pdb files if they are not present
     """
-    filename = path + name + '.' + file_type
+    filename = path + name + "." + file_type
     if not os.path.exists(filename):
-        targt_url = 'https://files.rcsb.org/download/' + name + '.' + file_type
+        targt_url = "https://files.rcsb.org/download/" + name + "." + file_type
         url = urlretrieve(targt_url, filename)
 
 
@@ -153,7 +157,7 @@ def char_range(c1, c2):
     """
     Generates the characters from `c1` to `c2`, inclusive. Respectics caps.
     """
-    for c in range(ord(c1), ord(c2)+1):
+    for c in range(ord(c1), ord(c2) + 1):
         yield chr(c)
 
 
@@ -193,7 +197,7 @@ def coordinates(pps, common_res=None, al_dict=None):
         for pep in chain:
             for res in pep:
                 if test_residue(res, common_res, al_dict):
-                    coordinates.append(res['CA'].coord)
+                    coordinates.append(res["CA"].coord)
                     labels.append([res.full_id, res.resname])
 
     return np.array(coordinates), labels
@@ -254,7 +258,7 @@ def atoms(pps, common_res=None, al_dict=None):
         for pep in chain:
             for res in pep:
                 if test_residue(res, common_res, al_dict):
-                    atoms.append(res['CA'])
+                    atoms.append(res["CA"])
                     labels.append([res.full_id, res.resname])
 
     return atoms, labels
@@ -269,10 +273,10 @@ def test_residue(res, common_res=None, al_dict=None):
     if type(res) != PDB.Residue.Residue:
         return False
     # Does it contain CA?
-    elif not res.has_id('CA'):
+    elif not res.has_id("CA"):
         return False
     # Is CA disordered?
-    elif type(res['CA']) == PDB.Atom.DisorderedAtom:
+    elif type(res["CA"]) == PDB.Atom.DisorderedAtom:
         return False
     # If there is no common set or no dict, no more tests
     if not common_res or not al_dict:
@@ -285,19 +289,19 @@ def test_residue(res, common_res=None, al_dict=None):
         return al_dict[res.full_id] in common_res
 
 
-def save_bfactor(name, bfact=None, ext='_rot_clust', path = './', file_type='pdb'):
+def save_bfactor(name, bfact=None, ext="_rot_clust", path="./", file_type="pdb"):
     """
     Use the labels->numbers bfact dictionary to modify the beta factors
     of a given structure and save it with an extension.
     """
     # Load parser/writer
-    if file_type == 'pdb':
+    if file_type == "pdb":
         parser = PDB.PDBParser()
         writer = PDB.PDBIO()
-    elif file_type == 'cif':
+    elif file_type == "cif":
         parser = PDB.MMCIFParser()
         writer = PDB.MMCIFIO()
-    filename = path + name + '.' + file_type
+    filename = path + name + "." + file_type
     structure = parser.get_structure(name, filename)
 
     # Modify structure with new beta factors
@@ -310,15 +314,15 @@ def save_bfactor(name, bfact=None, ext='_rot_clust', path = './', file_type='pdb
             # for non-analyzed, give arbitrary label, here -2
             else:
                 for atom in res:
-                    atom.set_bfactor(-2.)
+                    atom.set_bfactor(-2.0)
 
     # write output
     writer.set_structure(structure)
-    new_filename = filename[:-4] + ext + '.' + file_type
+    new_filename = filename[:-4] + ext + "." + file_type
     writer.save(new_filename)
-    
-def save_txt(rel_pdb, def_pdb, variables, 
-             labels, ext = "", path = "./"):
+
+
+def save_txt(rel_pdb, def_pdb, variables, labels, ext="", path="./"):
     """
     Creates a .txt file to contain data from variables received as argument.
     The variables should be a vector of arrays for different quantities. The
@@ -329,14 +333,14 @@ def save_txt(rel_pdb, def_pdb, variables,
     filename = path + rel_pdb + "-" + def_pdb
     if ext:
         filename += "-" + ext
-    
+
     with open(filename + ".txt", "w") as f:
         for label, i in zip(labels, range(len(labels))):
             line = str(label[0]) + ": "
-            
+
             for var in variables:
                 line += str(var[i]) + " "
-            line = line[:-1]  + "\n"
-            
+            line = line[:-1] + "\n"
+
             f.write(line)
     return
