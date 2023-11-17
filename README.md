@@ -88,8 +88,3 @@ If you are using this package as part of an academic project, please cite the fo
 }
 ```
 
-## ToDo
-
-- check that the second order works
-- add to pypi
-- use black to polish code
