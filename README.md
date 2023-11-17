@@ -1,24 +1,26 @@
-# proFSA
-`proFSA` is a Python package for performing Finite Strain Analysis (FSA) on atomic structures of proteins. The package loads a pair of protein structures, taken as `pdb/cif` files, and applies the FSA formalism adapted to proteins. The results can be saved in `pdb/cif` files. In addition, it also allows to generate some basic plots of FSA related quantities.
+# PSA
+`PSA` is a Python package for performing Protein Strain Analysis (PSA). The package loads a pair of protein structures, taken as `pdb/cif` files, and applies the Finite Strain Analysis formalism adapted to proteins. The results can be saved in `pdb/cif` files. In addition, it also allows to generate some basic plots of FSA related quantities.
 
 ## Installation
 
-The easiest way to start using `proFSA` is to insatll it install it through `pip` as follows
+The easiest way to start using `PSA` is to install it install it through `pip` as follows
 
 ```bash
-pip install proFSA
+pip install PSA-current_version.whl
 ```
- The requirements are
 
-- `numpy` (tested with vX.Y)
-- `scipy` (tested with vX.Y)
-- `numba` (tested with vX.Y)
-- `biopython` (tested with vX.Y)
-- `urllib` (tested with vX.Y)
+using the latest version found in the folder `dist`. The requirements are
 
+- `numpy` (tested with v1.25.2)
+- `scipy` (tested with v1.11.2)
+- `numba` (tested with v0.58.0)
+- `biopython` (tested with v1.81)
+- `urllib3` (tested with v1.26.7)
+- `matplotlib` (tested with v3.8.0)
+  
 ## Package description
 
-The folder package is `fsa`, which contains the following files
+The folder package is `psa`, which contains the following files
 
 | File                          | Description |
 |-------------------------------|-------------|
@@ -26,23 +28,48 @@ The folder package is `fsa`, which contains the following files
 | ```forms.py```   | Functions that generate elementary deformations on a cylinder shape, aimed at testing the method |
 | ```sequence.py```  | All functions related to aligning or comparing protein sequences |
 | ```spatial.py```  | Functions to manipulate structures in space |
-| ```elastic.py```    | Functions that perform Finite Strain Analysis |
+| ```elastic.py```    | Functions that perform Protein Strain Analysis |
 
-In addition, the folder `examples` contains a notebook showing a minimal working example of how to use `proFSA`, and another notebook performing basic tests on elementary deformations of a cylinder.
+In addition, the folder `examples` contains a notebook showing a minimal working example of how to use `PSA`, and another notebook performing basic tests on elementary deformations of a cylinder.
 
 
 ## Usage
-A simple example showing how to load a pair of structures:
+Here is a simple example showing how to calculate strain for a pair of structures:
 
 ```python
-import fsa.load as load
-import fsa.sequence as seq
+import psa.load as load
+import psa.sequence as seq
+import psa.elastic as elastic
 
-pps_pair =  load.structure_pair('6FKF', '6FKH')   # load pdb pair
-com_res, ind_dict = seq.common_residues() # find common residues, and translation dictionary
-xyz_pairs, _ = load.coordinates() # load coordinates
-elastic.deformation_gradient
-elastic.rotations()
+# Load structures
+rel_pps = load.single_structure(name = '6FKF')
+def_pps = load.single_structure(name = '6FKH')
+
+# Pairwise sequence alignment
+com_res, rel_dict, def_dict = seq.pairwise_alignment(rel_pps, def_pps)
+
+# Load coordinates of atoms
+rel_xyz, rel_labels = load.coordinates(rel_pps,
+                                       com_res,
+                                       rel_dict)
+def_xyz, def_labels = load.coordinates(def_pps,
+                                       com_res,
+                                       def_dict)
+
+# Calculating the neighbourhood of each atom
+weights = elastic.compute_weights_fast([rel_xyz, def_xyz], 
+                                       "intersect",
+                                       [10.])
+
+# Calculating the deformation gradient
+F = elastic.deformation_gradient_fast(weights,
+                                      rel_xyz,
+                                      def_xyz)
+
+# Obtaining readouts: principal stretches squared
+# and principal directions
+gam_l, gam_n = elastic.lagrange_strain(F)
+stretches, stretch_axis = elastic.principal_stretches_from_g(gam_n)
 ```
 
 
@@ -51,31 +78,18 @@ elastic.rotations()
 If you are using this package as part of an academic project, please cite the following reference
 
 ```bash
-@article{XXXYYYZZZ,
-         author = {Sartori, Pablo and Leibler, Stanislas},
-         title = {},
-         journal = {ArXiv e-prints},
-         archivePrefix = \"arXiv\",
-         eprint = {2022.XYZ},
-         year = 2020}
+@article{sartori2023evolutionary,
+  title={Evolutionary conservation of mechanical strain distributions in functional transitions of protein structures},
+  author={Sartori, Pablo and Leibler, Stanislas},
+  journal={bioRxiv},
+  pages={2023--02},
+  year={2023},
+  publisher={Cold Spring Harbor Laboratory}
+}
 ```
 
 ## ToDo
 
-- add cylinder file notebook
-- add minimal working example
-- add complicated working example
-- the chunk that follows should be a function
-``` python
-uni_ids = [None] * len(rel_pps)
-my_ref_seqs = seq.generate_reference(rel_pps, uni_ids)
-rel_idx = seq.align(rel_pps, my_ref_seqs)
-def_idx = seq.align(def_pps, my_ref_seqs)
-rel_dict = seq.aligned_dict(rel_pps, rel_idx)
-def_dict = seq.aligned_dict(def_pps, def_idx)
-com_res = seq.common(rel_dict, def_dict)
-```
 - check that the second order works
-- implement numba for other weight methods
 - add to pypi
 - use black to polish code
