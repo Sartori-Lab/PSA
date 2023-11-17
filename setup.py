@@ -2,13 +2,13 @@ from setuptools import setup, find_packages
 
 
 setup(
-    name='proFSA',
-    version='0.16',
+    name='PSA',
+    version='0.17',
     license='MIT',
     author="Pablo Sartori",
     author_email='psartor@igc.gulbenkian.pt',
     packages=find_packages(),
-    url='https://github.com/sartorilab/proFSA',
+    url='https://github.com/sartorilab/PSA',
     keywords=["biomechanics", "protein-structure", "biophysics", "bioinformatics"],
     python_requires=">=3.8",
     install_requires=[
@@ -16,8 +16,8 @@ setup(
         "numpy",
         "scipy",
         "biopython",
-        "urllib3==1.26.7",
+        "urllib3",
         "numba",
     ],
-    py_modules=["fsa/elastic", "fsa/forms", "fsa/load", "fsa/sequence", "fsa/spatial"],
+    py_modules=["psa/elastic", "psa/forms", "psa/load", "psa/sequence", "psa/spatial"],
 )
