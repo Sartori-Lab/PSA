@@ -8,9 +8,9 @@ The easiest way to start using `PSA` is to install it install it through `pip` a
 ```bash
 pip install PSA-current_version.whl
 ```
+You can find the latest version `whl` file in the release section.
 
-using the latest version found in the folder `dist`. The requirements are
-
+The requirements are
 - `numpy` (tested with v1.25.2)
 - `scipy` (tested with v1.11.2)
 - `numba` (tested with v0.58.0)
