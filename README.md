@@ -1,4 +1,5 @@
 # PSA
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 `PSA` is a Python package for performing Protein Strain Analysis (PSA). The package loads a pair of protein structures, taken as `pdb/cif` files, and applies the Finite Strain Analysis formalism adapted to proteins. The results can be saved in `pdb/cif` files. In addition, it also allows to generate some basic plots of FSA related quantities.
 
 ## Installation
