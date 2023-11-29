@@ -117,7 +117,7 @@ def align(pps, ref_seqs):
     """
     # Load sequence aligner
     aligner = Align.PairwiseAligner()
-    aligner.mode = "local"
+    aligner.mode = "global"
     aligner.open_gap_score = -0.5
     aligner.extend_gap_score = -0.1
 
@@ -154,7 +154,7 @@ def align_seqs(seq_pair):
     """
     # Load the aligner
     aligner = Align.PairwiseAligner()
-    aligner.mode = "local"
+    aligner.mode = "global"
     aligner.open_gap_score = -0.5
     aligner.extend_gap_score = -0.1
 
