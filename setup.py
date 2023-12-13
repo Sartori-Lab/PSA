@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='PSA',
-    version='1',
+    version='1b.02',
     license='MIT',
     author="Pablo Sartori",
     author_email='psartor@igc.gulbenkian.pt',

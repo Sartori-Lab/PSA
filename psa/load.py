@@ -344,3 +344,40 @@ def save_txt(rel_pdb, def_pdb, variables, labels, ext="", path="./"):
 
             f.write(line)
     return
+
+def arrow_eigenvectors(xyz, l, v, factor = 10, threshold = .2):
+    """
+    Creates a long .build string describing the position and length of
+    a given principal stretch, centered on the coordinate of its respective
+    atom.
+    """
+    
+    arrow1 = np.zeros(xyz.shape)
+    arrow2 = np.zeros(xyz.shape)
+    
+    arrow1 = xyz + v * (l[:, None] - 1) * factor
+    arrow2 = xyz - v * (l[:, None] - 1) * factor
+        
+    high = "#7B3294"
+    
+    def text(*itens):
+        text = [str(item) + " " for item in itens]
+        return " ".join(text)[:-1]
+    
+    arrow_string = ""
+    
+    line = text(".color", high, "\n")
+    arrow_string += line
+
+    for i0, i1, i2, lb in zip(xyz, arrow1, arrow2, np.abs(l - 1)):
+        if lb >= threshold:
+            line = text(".arrow", i0[0], i0[1], i0[2],
+                        i1[0], i1[1], i1[2],
+                        .2, .5, .75, "\n")
+            arrow_string += line
+
+            line = text(".arrow", i0[0], i0[1], i0[2],
+                        i2[0], i2[1], i2[2],
+                        .2, .5, .75, "\n")
+            arrow_string += line
+    return arrow_string
