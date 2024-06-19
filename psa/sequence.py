@@ -231,6 +231,24 @@ def common(rel_dict, def_dict):
     return common_res
 
 
+def common_multiple(vec_dict):
+    """
+    Compute the set of common residues by finding the intersect of two 
+    or more dictionaries. We use the self-made language (i.e., dict values)
+    """
+    # Create sets with residues labels
+    vec_set = []
+    for i in range(len(vec_dict)):
+        vec_set.append(set(vec_dict[i].values()))
+        
+    common_res = vec_set[0].intersection(vec_set[1])
+    for i in range(1, len(vec_dict)-1):
+        temp_set = vec_set[i].intersection(vec_set[i+1])
+        common_res = common_res.intersection(temp_set)
+    
+    return common_res
+
+
 def conservation(dat_list):
     """
     This function performs conservation analysis on a list of ordered data.
