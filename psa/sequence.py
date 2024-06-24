@@ -92,7 +92,7 @@ def pairwise_alignment(rel_pps, def_pps):
     Perform the default alignment pipeline for two structures with the
     same number of chains
     """
-
+    # Create a reference sequence
     my_ref_seqs = generate_reference(rel_pps)
 
     # Align both structures to reference
@@ -104,9 +104,32 @@ def pairwise_alignment(rel_pps, def_pps):
     def_dict = aligned_dict(def_pps, def_idx, my_ref_seqs)
 
     # Intersect the aligned residues
-    com_res = common(rel_dict, def_dict)
+    com_at = common(rel_dict, def_dict)
 
-    return com_res, rel_dict, def_dict
+    return com_at, rel_dict, def_dict
+
+
+def pairwise_alignment_multiple(structures, ref_struc = 0):
+    """
+    Receive a list of structures and performs pairwise sequence 
+    alignemnt for each of the chains using one of the structures
+    as reference. Returns the set of common atoms and a list with 
+    n = len(sturctures) dicts of labels
+    
+    Note that this method does not peform a multiple sequence 
+    alignemnt
+    """
+    n = len(structures)
+    
+    al_dicts = []
+    for i in range(n):
+        pair = pairwise_alignment(structures[ref_struc], 
+                                  structures[i])
+        al_dicts.append(pair[2])
+        
+    common_at = common_multiple(al_dicts)
+    
+    return common_at, al_dicts
 
 
 def align(pps, ref_seqs):
@@ -210,15 +233,16 @@ def aligned_dict(pps, start_stop, ref_seqs):
 
                         # Store entry if residue passes test
                         if load.test_residue(res):
-                            aligned[res.full_id] = (idx, n_num)
+                            # Loop over atoms of the residue 
+                            for a_i, at in enumerate(res):
+                                aligned[at.full_id] = (idx, n_num, at.id)
                 res_i += 1
 
     return aligned
 
-
 def common(rel_dict, def_dict):
     """
-    Compute the set of common residues by finding the intersect of two
+    Compute the set of common atoms by finding the intersect of two
     dictionaries. We use the self-made language (i.e., dict values)
     """
     # Create sets with residues labels
@@ -226,27 +250,29 @@ def common(rel_dict, def_dict):
     def_set = set(def_dict.values())
 
     # Calculate the intersect set
-    common_res = rel_set.intersection(def_set)
+    common_at = rel_set.intersection(def_set)
 
-    return common_res
+    return common_at
 
 
 def common_multiple(vec_dict):
     """
-    Compute the set of common residues by finding the intersect of two 
+    Compute the set of common atoms by finding the intersect of two 
     or more dictionaries. We use the self-made language (i.e., dict values)
     """
+    
     # Create sets with residues labels
     vec_set = []
     for i in range(len(vec_dict)):
         vec_set.append(set(vec_dict[i].values()))
-        
-    common_res = vec_set[0].intersection(vec_set[1])
+    
+    # Calculate the intersect set
+    common_at = vec_set[0].intersection(vec_set[1])
     for i in range(1, len(vec_dict)-1):
         temp_set = vec_set[i].intersection(vec_set[i+1])
-        common_res = common_res.intersection(temp_set)
+        common_at = common_at.intersection(temp_set)
     
-    return common_res
+    return common_at
 
 
 def conservation(dat_list):
