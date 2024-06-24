@@ -8,7 +8,7 @@ from numba import jit
 from scipy.spatial import distance
 import scipy.linalg as spla
 import numpy.linalg as npla
-
+from . import spatial
 
 def compute_weights_fast(xyz_list, method="intersect", parameters=[6.0, 8.0]):
     """
@@ -390,7 +390,7 @@ def new_principal_stretches_from_g(lagrange_strain):
 # Energy functions
 
 
-def saint_venant_energy_density(lagrange_strain, first_lame=7.30e7, second_lame=3.76e7):
+def saint_venant_energy_density(lagrange_strain, first_lame = 7.30e7, second_lame = 3.76e7):
     """
     Calculate the energy density for a hyperelastic material considering the
     Saint Venant-Kirchhoff model, psi = lambda/2 * tr(gam)^2 + mu * tr(gam^2)
@@ -401,19 +401,18 @@ def saint_venant_energy_density(lagrange_strain, first_lame=7.30e7, second_lame=
     # Calculate stretches squared
     stretches2, _ = principal_stretches_from_g(lagrange_strain)
     stretches2 = np.abs(stretches2)
-
+    
     # Calculate trace elements
-    tr2_gam = np.sum((stretches2 - 1) / 2, axis=1) ** 2
-    tr_gam2 = np.sum(((stretches2 - 1) / 2) ** 2, axis=1)
-
+    tr2_gam = np.sum((stretches2-1)/2, axis = 1)**2
+    tr_gam2 = np.sum(((stretches2-1)/2)**2, axis = 1)
+    
     psi = first_lame / 2 * tr2_gam + second_lame * tr_gam2
-
+    
     return psi
 
 
-def saint_venant_energy(
-    energy_density, protein_volume, labels, units="kT", verbose=False
-):
+def saint_venant_energy(energy_density, protein_volume, labels, 
+                        units = "kT", verbose = False):
     """
     Calculate the energy a hyperelastic material considering the
     Saint Venant-Kirchhoff model. It integrates the energy density over the
@@ -422,45 +421,39 @@ def saint_venant_energy(
     The output is returned in kT units as default, other options are
     'kJ/mol', 'kcal/mol', and 'J'.
     """
-
+    
     vf = spatial.effective_volume(labels, protein_volume, verbose)
     E = energy_density * vf
-
+    
     if units == "kT":
-        kT = 1.380649e-23 * 300
-        E = E / kT
+        kT = 1.380649e-23*300
+        E = E/kT
     elif units == "kJ/mol":
-        mol = 6.02214076e23
-        E = E * mol / 1e3
+        mol =  6.02214076e23
+        E = E*mol/1e3
     elif units == "kcal/mol":
         kcal = 4.184e3
-        mol = 6.02214076e23
-        E = E * mol / kcal
+        mol =  6.02214076e23
+        E = E*mol/kcal
     elif units != "J":
         print("Units of energy not recognized, returning energy in Joules (J)")
-
+    
     return E
-
-
-def elastic_energy(
-    lagrange_strain,
-    labels,
-    protein_volume,
-    units="kT",
-    verbose=False,
-    first_lame=7.30e7,
-    second_lame=3.76e7,
-):
+    
+    
+def elastic_energy(lagrange_strain, labels, protein_volume, 
+                   units = "kT", verbose = False,
+                   first_lame = 7.30e7, second_lame = 3.76e7):
     """
     Condensated function to calculate the elastic energy, calling
     'saint_venant_energy_density' and 'saint_venant_energy'.
     """
-
+    
     psi = saint_venant_energy_density(lagrange_strain, first_lame, second_lame)
     E = saint_venant_energy(psi, protein_volume, labels, units, verbose)
-
-    return E
-
+    
+    return E    
+    
 
 # Set of functions to calculate weights and deformation gradient not optimized
 
