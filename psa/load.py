@@ -16,7 +16,8 @@ def single_structure(
     model_id=0,
     chain_ids=None,
     path="./",
-    file_type="pdb"):
+    file_type="pdb",
+):
     """
     Load PDB file, read structure and generate list of
     polypeptide objects (several polypeptides consti-
@@ -183,7 +184,7 @@ def choose_chains(all_pps, chain_ids=None):
     return pps
 
 
-def coordinates(pps, common_at = None, al_dict = None, selection = "CA"):
+def coordinates(pps, common_at=None, al_dict=None, selection="CA"):
     """
     Get coordinates of the polypeptides that were aligned. To do so, we 
     check whether they are in the common set using the alignment 
@@ -197,22 +198,22 @@ def coordinates(pps, common_at = None, al_dict = None, selection = "CA"):
 
     coordinates = []
     labels = []
-    
+
     # Write a list of selected atoms
     if selection == "CA":
         selected = ["CA"]
-        
+
     elif selection == "CAB":
         selected = ["CA", "CB"]
-        
+
     elif selection == "backbone":
         selected = ["N", "CA", "C", "O"]
-    
+
     elif selection == "all":
         selected = [""]
-        
+
     selected = ["<Atom " + at + ">" for at in selected]
-    
+
     # Loop over chains, peptides, residues, and atoms
     for chain in pps:
         for pep in chain:
@@ -222,7 +223,7 @@ def coordinates(pps, common_at = None, al_dict = None, selection = "CA"):
                         if test_atom(at, common_at, al_dict):
                             if selection == "all" or str(at) in selected:
                                 coordinates.append(at.coord)
-                                labels.append([at.full_id, at.element])    
+                                labels.append([at.full_id, at.element])
 
     return np.array(coordinates), labels
 
@@ -290,9 +291,9 @@ def test_residue(res, common_res=None, al_dict=None):
     # Test belonging
     else:
         return al_dict[res.full_id] in common_res
-    
 
-def test_atom(at, common_at = None, al_dict = None):
+
+def test_atom(at, common_at=None, al_dict=None):
     """
     Verify if the atom belongs to the common set of atoms
     """
@@ -305,7 +306,6 @@ def test_atom(at, common_at = None, al_dict = None):
     # Test belonging
     else:
         return al_dict[at.full_id] in common_at
-
 
 
 def save_bfactor(name, bfact=None, ext="_rot_clust", path="./", file_type="pdb"):
@@ -364,39 +364,40 @@ def save_txt(rel_pdb, def_pdb, variables, labels, ext="", path="./"):
             f.write(line)
     return
 
-def arrow_eigenvectors(xyz, l, v, factor = 10, threshold = .2):
+
+def arrow_eigenvectors(xyz, l, v, factor=10, threshold=0.2):
     """
     Creates a long .build string describing the position and length of
     a given principal stretch, centered on the coordinate of its respective
     atom.
     """
-    
+
     arrow1 = np.zeros(xyz.shape)
     arrow2 = np.zeros(xyz.shape)
-    
+
     arrow1 = xyz + v * (l[:, None] - 1) * factor
     arrow2 = xyz - v * (l[:, None] - 1) * factor
-        
+
     high = "#7B3294"
-    
+
     def text(*itens):
         text = [str(item) + " " for item in itens]
         return " ".join(text)[:-1]
-    
+
     arrow_string = ""
-    
+
     line = text(".color", high, "\n")
     arrow_string += line
 
     for i0, i1, i2, lb in zip(xyz, arrow1, arrow2, np.abs(l - 1)):
         if lb >= threshold:
-            line = text(".arrow", i0[0], i0[1], i0[2],
-                        i1[0], i1[1], i1[2],
-                        .2, .5, .75, "\n")
+            line = text(
+                ".arrow", i0[0], i0[1], i0[2], i1[0], i1[1], i1[2], 0.2, 0.5, 0.75, "\n"
+            )
             arrow_string += line
 
-            line = text(".arrow", i0[0], i0[1], i0[2],
-                        i2[0], i2[1], i2[2],
-                        .2, .5, .75, "\n")
+            line = text(
+                ".arrow", i0[0], i0[1], i0[2], i2[0], i2[1], i2[2], 0.2, 0.5, 0.75, "\n"
+            )
             arrow_string += line
     return arrow_string
