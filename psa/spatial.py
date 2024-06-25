@@ -11,7 +11,8 @@ from . import load
 
 
 def align_structures(
-    rel_pps, def_pps, al_chain_ids=None, common_res=None, rel_dict=None, def_dict=None):
+    rel_pps, def_pps, al_chain_ids=None, common_res=None, rel_dict=None, def_dict=None
+):
     """
     Perform spatial alignment of deformed polypeptides to reference polypep-
     tides for the given chains. If no chain id is given, use all structure
@@ -134,6 +135,64 @@ def rigid_body(pps, displacement, old_axis=[0, 0, 1], new_axis=[0, 0, 1]):
                     res.transform(rotation, -displacement)
 
     return
+
+
+def effective_volume(labels, protein_volume, verbose=False):
+    """
+    Calculate an array of the effective volume occupied by each atom, considering 
+    the VDW of each atom and the global VDW volume of the protein.
+    
+    The 'protein_volume' can be the estimate of the entire volume of the 
+    assembly (float input) or a dictionary with chain names as index and the
+    respective volumes as values (dict input), with in A^3 (m^-30) as units.
+    """
+
+    # Experimental van der Waals radius of each atom
+    vdw = {"C": 1.7e-10, "O": 1.52e-10, "S": 1.8e-10, "H": 1.2e-10, "N": 1.55e-10}
+    n_atom = {"C": 0, "O": 0, "S": 0, "H": 0, "N": 0}
+    v_atom = {"C": 0, "O": 0, "S": 0, "H": 0, "N": 0}
+
+    # Calculate the van der Waals volume of each atom (volume of a sphere)
+    v = np.zeros(len(labels))
+    for i in range(len(v)):
+        at = labels[i][1]
+
+        v[i] = 4 * np.pi * vdw[at] ** 3 / 3
+        n_atom[at] += 1
+        v_atom[at] += v[i]
+
+    # Calculate the effective volumes (vf = V * v / sum(v))
+    # with V the protein volume and v the individual atomic volumes
+
+    vf = np.zeros(len(v))
+    if type(protein_volume) == float or type(protein_volume) == int:
+        vf = protein_volume * v * 1e-30 / np.sum(v)
+
+    elif type(protein_volume) == dict:
+        idxs = np.zeros(len(v))
+        for chain in protein_volume.keys():
+            chain_idx = load.chain_indices(chain, labels)[0]
+            idxs[chain_idx] += 1
+            vf[chain_idx] = (
+                protein_volume[chain] * 1e-30 * v[chain_idx] / np.sum(v[chain_idx])
+            )
+
+        if np.sum(idxs == 1) != len(idxs):
+            print("Provided chains do not span all atoms")
+
+    # Returns a summary of computed atoms per atomic type
+    if verbose:
+        for at in list(vdw.keys()):
+            print(
+                at + ": n =",
+                n_atom[at],
+                "\tv =",
+                v_atom[at] * 1e30,
+                "A^3" "\tvf =",
+                v_atom[at] / np.sum(v),
+            )
+
+    return vf
 
 
 def coordinates_to_polar(coordinates, inv=False):

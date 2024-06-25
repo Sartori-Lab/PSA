@@ -80,13 +80,19 @@ stretches, stretch_axis = elastic.principal_stretches_from_g(gam_n)
 If you are using this package as part of an academic project, please cite the following reference
 
 ```bash
-@article{sartori2023evolutionary,
-  title={Evolutionary conservation of mechanical strain distributions in functional transitions of protein structures},
-  author={Sartori, Pablo and Leibler, Stanislas},
-  journal={bioRxiv},
-  pages={2023--02},
-  year={2023},
-  publisher={Cold Spring Harbor Laboratory}
+@article{PhysRevX.14.011042,
+  title = {Evolutionary Conservation of Mechanical Strain Distributions in Functional Transitions of Protein Structures},
+  author = {Sartori, Pablo and Leibler, Stanislas},
+  journal = {Phys. Rev. X},
+  volume = {14},
+  issue = {1},
+  pages = {011042},
+  numpages = {11},
+  year = {2024},
+  month = {Mar},
+  publisher = {American Physical Society},
+  doi = {10.1103/PhysRevX.14.011042},
+  url = {https://link.aps.org/doi/10.1103/PhysRevX.14.011042}
 }
 ```
 
